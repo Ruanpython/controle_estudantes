@@ -1,8 +1,7 @@
 # Controle de Estudantes, Cursos e Notas (Oracle)
 
 Projeto em Python que implementa CRUD completo para Estudantes, Cursos e Lançamento de Notas,
-usando banco Oracle. O sistema é uma aplicação de linha de comando (CLI) simples, pronta para
-integrar com o projeto original ou servir como base para desenvolvimento.
+usando banco Oracle. O sistema é uma aplicação de linha de comando (CLI) simples.
 
 ## Estrutura
 - `main.py` - ponto de entrada com menu CLI.
