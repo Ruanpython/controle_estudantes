@@ -1,0 +1,60 @@
+📄 Guia de Utilização (Linux)
+Este documento explica como configurar e executar o sistema CLI de Controle de Estudantes, Cursos e Notas em um ambiente Linux.
+
+1. 📋 Pré-requisitos
+Para rodar este projeto, você precisará dos seguintes softwares instalados e configurados no seu sistema operacional Linux:
+Python 3.8+
+MongoDB Server: O servidor de banco de dados deve estar instalado e rodando (por padrão, o projeto espera que ele esteja acessível em mongodb://localhost:27017/).
+
+2. 🚀 Configuração Inicial
+2.1. Clone o Repositório
+Se ainda não o fez, clone o projeto (supondo que o repositório já está no GitHub) e navegue até o diretório:
+
+Bash
+
+# Exemplo de comando
+git clone <URL_DO_SEU_REPOSITORIO>
+cd <nome_do_diretorio>
+2.2. Instale as Dependências Python
+O projeto utiliza a biblioteca pymongo para conectar-se ao MongoDB.
+
+Recomendamos criar um ambiente virtual (opcional, mas boa prática):
+
+Bash
+python3 -m venv venv
+source venv/bin/activate
+Instale as dependências usando o arquivo requirements.txt:
+
+Bash
+pip install -r requirements.txt
+2.3. Configuração do Banco de Dados
+Observação: Diferente de bancos de dados relacionais como o Oracle, o MongoDB é schemaless (sem esquema rígido). O código Python cria o banco de dados (controle_estudantes_db) e a estrutura das coleções (ESTUDANTE e CURSO) automaticamente no primeiro acesso.
+
+Verificação do Servidor: Certifique-se de que o servidor MongoDB está em execução antes de iniciar a aplicação.
+
+
+3. 🖥️ Execução do Sistema
+Para iniciar o sistema de linha de comando (CLI), execute o arquivo principal usando o Python 3:
+
+Bash
+
+python3 main.py
+Menu Principal
+Ao executar o comando, o menu será exibido:
+
+=== CONTROLE DE ESTUDANTES, CURSOS E NOTAS ===
+1. Estudantes
+2. Cursos
+3. Notas
+4. Relatórios 
+0. Sair
+> 
+4. 📝 Operações Chave
+A. Operações de Notas (Chave Composta)
+Devido à migração para o MongoDB, a tabela relacional NOTA foi eliminada. As notas são agora incorporadas nos documentos de ESTUDANTE.
+Lançar/Atualizar/Excluir Nota: Em vez de usar um único ID da nota (ID_NOTA), as operações exigem a identificação única do registro de nota usando a combinação ID do Estudante e ID do Curso.
+
+Operação,Dados Necessários
+Lançar Nota,"ID do Estudante, ID do Curso, Nota 1, Nota 2"
+Atualizar Nota,"ID do Estudante, ID do Curso, Novas Notas"
+Excluir Nota,"ID do Estudante, ID do Curso"
