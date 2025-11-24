@@ -1,6 +1,0 @@
--- Dados de exemplo
-INSERT INTO ESTUDANTE (NOME, MATRICULA, EMAIL) VALUES ('Ana Silva', '2023001', 'ana.silva@email.com');
-INSERT INTO ESTUDANTE (NOME, MATRICULA, EMAIL) VALUES ('Bruno Costa', '2023002', 'bruno.costa@email.com');
-INSERT INTO CURSO (NOME, CARGA_HORARIA) VALUES ('Algoritmos', 60);
-INSERT INTO CURSO (NOME, CARGA_HORARIA) VALUES ('Banco de Dados', 80);
-COMMIT;
