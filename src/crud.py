@@ -1,162 +1,213 @@
 from src.db import get_connection
-from src.models import Estudante, Curso, Nota
+from src.models import Estudante, Curso, CursoEmbed
+from typing import List
 
-
-# Estudante CRUD
-def criar_estudante(nome, matricula, email=None):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO ESTUDANTE (NOME, MATRICULA, EMAIL)
-                VALUES (:nome, :matricula, :email)""", {'nome': nome, 'matricula': matricula, 'email': email})
-    conn.commit()
-    cur.close()
-    conn.close()
-
-def listar_estudantes():
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT ID_ESTUDANTE, NOME, MATRICULA, EMAIL FROM ESTUDANTE ORDER BY ID_ESTUDANTE")
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return [Estudante(id=r[0], nome=r[1], matricula=r[2], email=r[3]) for r in rows]
-
-def atualizar_estudante(id_estudante, nome=None, matricula=None, email=None):
-    conn = get_connection()
-    cur = conn.cursor()
-    updates = []
-    params = {}
-    if nome is not None:
-        updates.append('NOME = :nome'); params['nome']=nome
-    if matricula is not None:
-        updates.append('MATRICULA = :matricula'); params['matricula']=matricula
-    if email is not None:
-        updates.append('EMAIL = :email'); params['email']=email
-    if not updates:
-        cur.close(); conn.close(); return
-    sql = 'UPDATE ESTUDANTE SET ' + ', '.join(updates) + ' WHERE ID_ESTUDANTE = :id'
-    params['id'] = id_estudante
-    cur.execute(sql, params)
-    conn.commit()
-    cur.close()
-    conn.close()
-
-def excluir_estudante(id_estudante):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('DELETE FROM ESTUDANTE WHERE ID_ESTUDANTE = :id', {'id': id_estudante})
-    conn.commit()
-    cur.close()
-    conn.close()
-
-# Curso CRUD
-def criar_curso(nome, carga_horaria=None):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('INSERT INTO CURSO (NOME, CARGA_HORARIA) VALUES (:nome, :ch)', {'nome': nome, 'ch': carga_horaria})
-    conn.commit()
-    cur.close()
-    conn.close()
-
-def listar_cursos():
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT ID_CURSO, NOME, CARGA_HORARIA FROM CURSO ORDER BY ID_CURSO')
-    rows = cur.fetchall()
-    cur.close(); conn.close()
-    return [Curso(id=r[0], nome=r[1], carga_horaria=r[2]) for r in rows]
-
-def atualizar_curso(id_curso, nome=None, carga_horaria=None):
-    conn = get_connection()
-    cur = conn.cursor()
-    updates = []; params={}
-    if nome is not None:
-        updates.append('NOME = :nome'); params['nome']=nome
-    if carga_horaria is not None:
-        updates.append('CARGA_HORARIA = :ch'); params['ch']=carga_horaria
-    if not updates:
-        cur.close(); conn.close(); return
-    sql = 'UPDATE CURSO SET ' + ', '.join(updates) + ' WHERE ID_CURSO = :id'
-    params['id'] = id_curso
-    cur.execute(sql, params)
-    conn.commit()
-    cur.close(); conn.close()
-
-def excluir_curso(id_curso):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('DELETE FROM CURSO WHERE ID_CURSO = :id', {'id': id_curso})
-    conn.commit(); cur.close(); conn.close()
-
-# Nota CRUD
-def lancar_nota(id_estudante, id_curso, nota1=None, nota2=None):
+def calcular_media_situacao(n1, n2):
     media = None
-    if nota1 is not None and nota2 is not None:
-        media = round((float(nota1) + float(nota2)) / 2, 2)
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('INSERT INTO NOTA (ID_ESTUDANTE, ID_CURSO, NOTA1, NOTA2, MEDIA) VALUES (:e, :c, :n1, :n2, :m)',
-                {'e': id_estudante, 'c': id_curso, 'n1': nota1, 'n2': nota2, 'm': media})
-    conn.commit(); cur.close(); conn.close()
-
-def listar_notas():
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('''SELECT n.ID_NOTA, n.ID_ESTUDANTE, e.NOME, n.ID_CURSO, c.NOME, n.NOTA1, n.NOTA2, n.MEDIA
-                   FROM NOTA n
-                   JOIN ESTUDANTE e ON e.ID_ESTUDANTE = n.ID_ESTUDANTE
-                   JOIN CURSO c ON c.ID_CURSO = n.ID_CURSO
-                   ORDER BY n.ID_NOTA''')
-    rows = cur.fetchall()
-    cur.close(); conn.close()
-    return rows
-
-def atualizar_nota(id_nota, nota1=None, nota2=None):
-    conn = get_connection()
-    cur = conn.cursor()
-    # calcular nova média se necessário
-    cur.execute('SELECT NOTA1, NOTA2 FROM NOTA WHERE ID_NOTA = :id', {'id': id_nota})
-    r = cur.fetchone()
-    if not r:
-        cur.close(); conn.close(); return False
-    n1 = nota1 if nota1 is not None else r[0]
-    n2 = nota2 if nota2 is not None else r[1]
-    media = None
+    situacao = None
     if n1 is not None and n2 is not None:
         media = round((float(n1) + float(n2)) / 2, 2)
-    updates = []
-    params = {}
-    if nota1 is not None:
-        updates.append('NOTA1 = :n1'); params['n1'] = nota1
-    if nota2 is not None:
-        updates.append('NOTA2 = :n2'); params['n2'] = nota2
-    updates.append('MEDIA = :m'); params['m'] = media
-    params['id'] = id_nota
-    sql = 'UPDATE NOTA SET ' + ', '.join(updates) + ' WHERE ID_NOTA = :id'
-    cur.execute(sql, params)
-    conn.commit(); cur.close(); conn.close()
-    return True
+        situacao = 'APROVADO' if media >= 6.0 else 'REPROVADO'
+    return media, situacao
 
-def excluir_nota(id_nota):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('DELETE FROM NOTA WHERE ID_NOTA = :id', {'id': id_nota})
-    conn.commit(); cur.close(); conn.close()
+def get_next_id(db, collection_name, id_field):
+    
+    doc = db[collection_name].find({}).sort([(id_field, -1)]).limit(1)
+    if doc.count() > 0:
+        return doc[0].get(id_field, 0) + 1
+    return 1
 
-# Relatórios
+
+
+def criar_estudante(nome, matricula, email=None):
+    db = get_connection()
+    new_id = get_next_id(db, 'ESTUDANTE', 'id_estudante')
+    estudante_doc = {
+        'id_estudante': new_id,
+        'nome': nome,
+        'matricula': matricula,
+        'email': email,
+        'cursos': []
+    }
+    db.ESTUDANTE.insert_one(estudante_doc)
+
+def listar_estudantes() -> List[Estudante]:
+    db = get_connection()
+    rows = db.ESTUDANTE.find().sort('id_estudante', 1)
+    estudantes = []
+    for r in rows:
+        cursos_embed = [CursoEmbed(**c) for c in r.get('cursos', [])]
+        estudantes.append(Estudante(id=r['id_estudante'], nome=r['nome'], matricula=r['matricula'], email=r['email'], cursos=cursos_embed))
+    return estudantes
+
+def atualizar_estudante(id_estudante, nome=None, matricula=None, email=None):
+    db = get_connection()
+    update_data = {}
+    if nome is not None:
+        update_data['nome'] = nome
+    if matricula is not None:
+        update_data['matricula'] = matricula
+    if email is not None:
+        update_data['email'] = email
+        
+    if update_data:
+        db.ESTUDANTE.update_one({'id_estudante': id_estudante}, {'$set': update_data})
+
+def excluir_estudante(id_estudante):
+    db = get_connection()
+    db.ESTUDANTE.delete_one({'id_estudante': id_estudante})
+
+
+
+def criar_curso(nome, carga_horaria=None):
+    db = get_connection()
+    new_id = get_next_id(db, 'CURSO', 'id_curso')
+    curso_doc = {'id_curso': new_id, 'nome': nome, 'carga_horaria': carga_horaria}
+    db.CURSO.insert_one(curso_doc)
+
+def listar_cursos() -> List[Curso]:
+    db = get_connection()
+    rows = db.CURSO.find().sort('id_curso', 1)
+    return [Curso(id=r['id_curso'], nome=r['nome'], carga_horaria=r.get('carga_horaria')) for r in rows]
+
+def atualizar_curso(id_curso, nome=None, carga_horaria=None):
+    db = get_connection()
+    update_data = {}
+    if nome is not None:
+        update_data['nome'] = nome
+    if carga_horaria is not None:
+        update_data['carga_horaria'] = carga_horaria
+        
+    if update_data:
+        
+        db.CURSO.update_one({'id_curso': id_curso}, {'$set': update_data})
+        
+        
+        if nome is not None:
+             db.ESTUDANTE.update_many(
+                {'cursos.id_curso': id_curso},
+                {'$set': {'cursos.$[elem].nome_curso': nome}},
+                array_filters=[{'elem.id_curso': id_curso}]
+            )
+
+def excluir_curso(id_curso):
+    db = get_connection()
+    db.CURSO.delete_one({'id_curso': id_curso})
+    db.ESTUDANTE.update_many({}, {'$pull': {'cursos': {'id_curso': id_curso}}})
+
+def lancar_nota(id_estudante, id_curso, nota1=None, nota2=None):
+    db = get_connection()
+    
+    existe = db.ESTUDANTE.find_one({'id_estudante': id_estudante, 'cursos.id_curso': id_curso})
+    if existe:
+        print("Erro: Nota para este curso e estudante já existe. Use 'Atualizar nota'.")
+        return
+        
+    media, situacao = calcular_media_situacao(nota1, nota2)
+    curso_master = db.CURSO.find_one({'id_curso': id_curso})
+    if not curso_master: return # Curso não existe
+    
+
+    curso_embed = {
+        'id_curso': id_curso,
+        'nome_curso': curso_master['nome'],
+        'carga_horaria': curso_master['carga_horaria'],
+        'nota1': nota1,
+        'nota2': nota2,
+        'media': media,
+        'situacao': situacao
+    }
+    
+
+    db.ESTUDANTE.update_one(
+        {'id_estudante': id_estudante},
+        {'$push': {'cursos': curso_embed}}
+    )
+
+def listar_notas():
+    db = get_connection()
+    pipeline = [
+        {'$unwind': '$cursos'},
+        {'$project': {
+            '_id': 0, 
+            'ID_ESTUDANTE': '$id_estudante',
+            'NOME_ESTUDANTE': '$nome',
+            'ID_CURSO': '$cursos.id_curso',
+            'NOME_CURSO': '$cursos.nome_curso',
+            'NOTA1': '$cursos.nota1',
+            'NOTA2': '$cursos.nota2',
+            'MEDIA': '$cursos.media'
+        }},
+        {'$sort': {'ID_ESTUDANTE': 1, 'ID_CURSO': 1}}
+    ]
+    return list(db.ESTUDANTE.aggregate(pipeline)) 
+
+def atualizar_nota(id_estudante, id_curso, nota1=None, nota2=None):
+    db = get_connection()
+    
+    estudante = db.ESTUDANTE.find_one(
+        {'id_estudante': id_estudante, 'cursos.id_curso': id_curso},
+        {'cursos.$': 1, '_id': 0}
+    )
+    
+    if not estudante or not estudante.get('cursos'):
+        return False
+        
+    curso_atual = estudante['cursos'][0]
+    n1 = nota1 if nota1 is not None else curso_atual.get('nota1')
+    n2 = nota2 if nota2 is not None else curso_atual.get('nota2')
+    media, situacao = calcular_media_situacao(n1, n2)
+
+
+    update_data = {}
+    if nota1 is not None: update_data['cursos.$.nota1'] = n1
+    if nota2 is not None: update_data['cursos.$.nota2'] = n2
+    update_data['cursos.$.media'] = media
+    update_data['cursos.$.situacao'] = situacao
+
+ 
+    result = db.ESTUDANTE.update_one(
+        {'id_estudante': id_estudante, 'cursos.id_curso': id_curso},
+        {'$set': update_data}
+    )
+    return result.modified_count > 0
+
+def excluir_nota(id_estudante, id_curso):
+    db = get_connection()
+    result = db.ESTUDANTE.update_one(
+        {'id_estudante': id_estudante},
+        {'$pull': {'cursos': {'id_curso': id_curso}}}
+    )
+    return result.modified_count > 0
+
 def relatorio_desempenho_por_estudante(id_estudante):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('''SELECT c.NOME, n.NOTA1, n.NOTA2, n.MEDIA,
-                          CASE WHEN n.MEDIA >= 6 THEN 'APROVADO' ELSE 'REPROVADO' END AS SITUACAO
-                   FROM NOTA n JOIN CURSO c ON c.ID_CURSO = n.ID_CURSO
-                   WHERE n.ID_ESTUDANTE = :id''', {'id': id_estudante})
-    rows = cur.fetchall(); cur.close(); conn.close()
-    return rows
+    db = get_connection()
+    pipeline = [
+        {'$match': {'id_estudante': id_estudante}},
+        {'$unwind': '$cursos'},
+        {'$project': {
+            '_id': 0, 
+            'NOME_CURSO': '$cursos.nome_curso',
+            'NOTA1': '$cursos.nota1',
+            'NOTA2': '$cursos.nota2',
+            'MEDIA': '$cursos.media',
+            'SITUACAO': '$cursos.situacao'
+        }},
+        {'$sort': {'NOME_CURSO': 1}}
+    ]
+    return list(db.ESTUDANTE.aggregate(pipeline))
 
 def relatorio_media_por_curso(id_curso):
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute('''SELECT AVG(n.MEDIA) FROM NOTA n WHERE n.ID_CURSO = :id''', {'id': id_curso})
-    r = cur.fetchone(); cur.close(); conn.close()
-    return r[0] if r else None
+    db = get_connection()
+    pipeline = [
+        {'$unwind': '$cursos'},
+        {'$match': {'cursos.id_curso': id_curso}},
+        {'$group': {
+            '_id': '$cursos.id_curso',
+            'media_geral': {'$avg': '$cursos.media'}
+        }}
+    ]
+    result = list(db.ESTUDANTE.aggregate(pipeline))
+    if result and 'media_geral' in result[0]:
+        return round(result[0]['media_geral'], 2)
+    return None
