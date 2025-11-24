@@ -91,14 +91,15 @@ def menu_notas():
         print('\n--- Notas ---')
         print('1. Listar notas')
         print('2. Lançar nota')
-        print('3. Atualizar nota')
-        print('4. Excluir nota')
+        print('3. Atualizar nota (ID Estudante + ID Curso)') 
+        print('4. Excluir nota (ID Estudante + ID Curso)') 
         print('0. Voltar')
         op = input('> ')
         if op == '1':
             rows = listar_notas()
+            
             for r in rows:
-                print(f'ID_NOTA: {r[0]} | Estudante: ({r[1]}) {r[2]} | Curso: ({r[3]}) {r[4]} | N1: {r[5]} | N2: {r[6]} | MÉDIA: {r[7]}')
+                print(f"Estudante: ({r['ID_ESTUDANTE']}) {r['NOME_ESTUDANTE']} | Curso: ({r['ID_CURSO']}) {r['NOME_CURSO']} | N1: {r['NOTA1']} | N2: {r['NOTA2']} | MÉDIA: {r['MEDIA']}")
             pause()
         elif op == '2':
             ide = int(input('ID do estudante: ')); idc = int(input('ID do curso: '))
@@ -106,13 +107,16 @@ def menu_notas():
             n1v = None if n1.strip()=='' else float(n1); n2v = None if n2.strip()=='' else float(n2)
             crud.lancar_nota(ide, idc, n1v, n2v); print('Nota lançada.'); pause()
         elif op == '3':
-            idn = int(input('ID da nota: '))
+            
+            ide = int(input('ID do estudante: ')); idc = int(input('ID do curso: '))
             n1 = input('Nova nota 1 (enter p/ manter): '); n1v = None if n1.strip()=='' else float(n1)
             n2 = input('Nova nota 2 (enter p/ manter): '); n2v = None if n2.strip()=='' else float(n2)
-            ok = crud.atualizar_nota(idn, n1v, n2v)
+            ok = crud.atualizar_nota(ide, idc, n1v, n2v)
             print('Atualizado.' if ok else 'Nota não encontrada.'); pause()
         elif op == '4':
-            idn = int(input('ID da nota: ')); crud.excluir_nota(idn); print('Excluído.'); pause()
+            
+            ide = int(input('ID do estudante: ')); idc = int(input('ID do curso: '))
+            ok = crud.excluir_nota(ide, idc); print('Excluído.' if ok else 'Nota não encontrada.'); pause()
         elif op == '0': break
         else: print('Opção inválida.')
 
@@ -126,8 +130,9 @@ def menu_relatorios():
         if op == '1':
             ide = int(input('ID do estudante: '))
             rows = crud.relatorio_desempenho_por_estudante(ide)
+            
             for r in rows:
-                print(f'Curso: {r[0]} | N1: {r[1]} | N2: {r[2]} | Média: {r[3]} | Situação: {r[4]}')
+                print(f"Curso: {r['NOME_CURSO']} | N1: {r['NOTA1']} | N2: {r['NOTA2']} | Média: {r['MEDIA']} | Situação: {r['SITUACAO']}")
             pause()
         elif op == '2':
             idc = int(input('ID do curso: '))
